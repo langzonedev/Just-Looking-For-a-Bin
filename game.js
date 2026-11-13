@@ -18,6 +18,8 @@ let cupX = .53;
 let tilt = 0;
 let coffee = 100;
 let stream = 0;
+let pouring = false;
+let strand = 0;
 let level = 0;
 let drag, hold, lastFrame, audio;
 let sound = false;
@@ -208,17 +210,20 @@ function rightEdge() {
   return Math.min(.89, 1 - 85 * unit / w);
 }
 function cup() {
-  const x = cupX * w, y = h * .612;
-  const angle = tilt * 2.03;
-  const cx = 22 * unit, cy = -32 * unit;
-  return { x, y, angle, lipX: x + cx * Math.cos(angle) - cy * Math.sin(angle),
-    lipY: y + cx * Math.sin(angle) + cy * Math.cos(angle) };
+  const gripX = cupX * w + 14 * unit;
+  const gripY = h * .612 + 14 * unit;
+  const angle = tilt * 1.88;
+  const cosine = Math.cos(angle), sine = Math.sin(angle);
+  const x = gripX - (16 * cosine - 14 * sine) * unit;
+  const y = gripY - (16 * sine + 14 * cosine) * unit;
+  return { x, y, angle, gripX, gripY,
+    lipX: x + (23 * cosine + 32 * sine) * unit,
+    lipY: y + (23 * sine - 32 * cosine) * unit };
 }
 function drawCup(held) {
   const u = unit;
-  const gripX = held.x + (16 * Math.cos(held.angle) - 14 * Math.sin(held.angle)) * u;
-  const gripY = held.y + (16 * Math.sin(held.angle) + 14 * Math.cos(held.angle)) * u;
-  const anchorX = Math.max(w * .58, Math.min(w * .83, gripX + 44 * u));
+  const { gripX, gripY } = held;
+  const anchorX = gripX + 36 * u + (.53 - cupX) * w * .27;
   ctx.save();
   ctx.translate(gripX,gripY);
   ctx.rotate(Math.atan2(h + 24 * u - gripY,anchorX - gripX) - Math.PI / 2);
@@ -281,6 +286,7 @@ function reset() {
   clearInput();
   cupX = .53;
   tilt = stream = level = nextChatter = 0;
+  pouring = false;
   coffee = 100;
   finished = false;
   droplets.length = splashes.length = patches.length = 0;
@@ -304,15 +310,22 @@ function simulate(dt) {
   tilt += (desired - tilt) * Math.min(1, dt * 11);
   const held = cup();
   const pourThreshold = .39 + (100 - coffee) * .0012;
-  const flow = coffee > 0 ? clamp((tilt - pourThreshold) / .55, 0, 1) : 0;
+  const flow = coffee > 0 && desired > 0 ? clamp((tilt - pourThreshold) / .55, 0, 1) : 0;
+  if (flow > .025 && !pouring) {
+    strand++;
+    stream = 1;
+  }
+  pouring = flow > .025;
+  held.flow = pouring ? flow : 0;
   if (flow > 0) {
     coffee = Math.max(0, coffee - 24 * flow * dt);
     el('coffee').value = coffee;
-    stream += dt * 110 * flow;
+    if (pouring) stream += dt * (52 + 30 * flow);
     while (stream >= 1) {
       stream--;
-      droplets.push({ x: held.lipX, y: held.lipY, vx:(44 + 55 * tilt + Math.random()*15)*unit,
-        vy:(10 + Math.random()*22)*unit, ground:h*(.72 + Math.random()*.13), size:(1.3 + Math.random()*1.45)*unit });
+      droplets.push({ x: held.lipX, y: held.lipY, vx:(12 + 44 * flow)*unit,
+        vy:(19 + flow*25)*unit, ground:h*(.77 + Math.random()*.018),
+        size:(.9 + 1.55*flow)*unit, strand });
     }
     const next = coffee < 16 ? 4 : coffee < 40 ? 3 : coffee < 65 ? 2 : coffee < 87 ? 1 : 0;
     if (next !== level) {
@@ -351,6 +364,22 @@ function simulate(dt) {
   }
   return held;
 }
+function drawCoffee(held) {
+  let previous = held.flow ? { x:held.lipX,y:held.lipY,strand,size:(.9+1.55*held.flow)*unit } : null;
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (let i = droplets.length - 1; i >= 0; i--) {
+    const drop = droplets[i];
+    if (previous?.strand === drop.strand && Math.hypot(previous.x-drop.x,previous.y-drop.y) < 27*unit) {
+      line(ctx,previous.x,previous.y,drop.x,drop.y,drop.size*1.7,'#623b28');
+      line(ctx,previous.x+.65*unit,previous.y,drop.x+.65*unit,drop.y,drop.size*.48,'#b77b4f');
+    } else {
+      oval(ctx,drop.x,drop.y,drop.size*.67,drop.size,'#845336');
+    }
+    previous = drop;
+  }
+  ctx.restore();
+}
 function frame(time) {
   const dt = clamp((time - (lastFrame ?? time)) / 1000, 0, .04);
   lastFrame = time;
@@ -360,10 +389,7 @@ function frame(time) {
     ctx.drawImage(backdrop,0,0,w,h);
     crowd();
     for (const patch of patches) oval(ctx,patch.x*w,patch.y*h,patch.size*unit,patch.size*.4*unit,'#28170fcc');
-    for (const drop of droplets) {
-      line(ctx,drop.x,drop.y,drop.x-drop.vx*.014,drop.y-drop.vy*.014,drop.size*1.3,'#633e2b');
-      oval(ctx,drop.x,drop.y,drop.size*.6,drop.size*.7,'#ad7446');
-    }
+    drawCoffee(held);
     for (const drop of splashes) oval(ctx,drop.x,drop.y,1.8*unit,1.5*unit,'#d69b68');
     drawCup(held);
   }
