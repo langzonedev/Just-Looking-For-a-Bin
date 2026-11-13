@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#202923">
+<title>Just Looking for a Bin · Lang Systems Arcade</title>
+<link rel="stylesheet" href="./style.css">
+<script src="./game.js" defer></script>
+</head>
+<body>
+<main>
+  <header>
+    <div><a href="https://arcade.langsystems.com.au/">LANG SYSTEMS ARCADE</a><h1>Just Looking for a Bin</h1></div>
+    <button id="sound" type="button" aria-pressed="false">Sound off</button>
+  </header>
+  <section class="scene" aria-label="Restaurant garden">
+    <canvas id="garden" tabindex="0" aria-label="Coffee pouring playfield" aria-describedby="instructions"></canvas>
+    <div class="hud"><label for="coffee">Coffee left</label><meter id="coffee" min="0" max="100" value="100"></meter></div>
+    <div class="reaction" id="reaction" role="status">They haven’t noticed.</div>
+    <div class="finish" id="finish" hidden>
+      <strong>Cup’s empty.</strong>
+      <span>Into the car for later.</span>
+      <button id="again" type="button">Another coffee</button>
+    </div>
+    <button id="pour" type="button">Hold to pour</button>
+  </section>
+  <footer id="instructions"><span>Slide to move the cup · Pull down to tilt</span><span>Keyboard · ← → move · Hold Space to pour</span><button id="reset" type="button">Reset cup</button></footer>
+</main>
+</body>
+</html>
