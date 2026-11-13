@@ -204,6 +204,17 @@ function crowd() {
   path(ctx, [[x+width*.61,y],[x+width*.69,y],[x+width*.51,y+height],[x+width*.44,y+height]], '#e4f3e21c');
   for (const f of [.215,.785]) line(ctx, x + width * f, y, x + width * f, y + height, 4 * unit, '#665f4f');
   line(ctx, x, y + height * .12, x + width, y + height * .12, 2 * unit, '#a39b794f');
+  const signX = x + width / 2;
+  const signY = y + height * .25;
+  const signSize = clamp(width * .07, 13, 29);
+  ctx.font = '700 ' + signSize + 'px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#3e3128';
+  ctx.fillStyle = '#f7d998';
+  ctx.strokeText('Yum Yai', signX, signY);
+  ctx.fillText('Yum Yai', signX, signY);
   ctx.restore();
 }
 function rightEdge() {
