@@ -142,23 +142,65 @@ function crowd() {
   for (let i = 0; i < people.length; i++) {
     const cx = x + width * (.12 + i * .19);
     const active = level > i % 4;
-    const size = Math.min(width * .075, height * .2);
-    const bounce = active && !reduceMotion.matches ? Math.sin(clock * (5 + level * 2) + i * 1.9) * size * level * .11 : 0;
-    const cy = y + height * (.57 - (active ? .07 : 0)) + bounce;
-    oval(ctx, cx, cy + size * .92, size * .77, size * .78, people[i]);
-    oval(ctx, cx, cy, size * .45, size * .55, skin[i]);
-    oval(ctx, cx - size * .06, cy - size * .32, size * .45, size * .26, '#383232');
+    const size = Math.min(width * .078, height * .23);
+    const bounce = active && !reduceMotion.matches ? Math.sin(clock * (5 + level) + i * 1.9) * size * level * .06 : 0;
+    const cy = y + height * (.58 - (active ? .06 : 0)) + bounce;
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(active && !reduceMotion.matches ? Math.sin(clock*3+i)*.08 : (i-2)*.028);
+    ctx.scale(size,size);
+    const tone = skin[i];
+    const hair = ['#332824','#42302d','#241f23','#714b36','#35272c'][i];
+    const shirt = ctx.createLinearGradient(-.7,0,.6,1.6);
+    shirt.addColorStop(0,people[i]);shirt.addColorStop(1,'#383839');
+    oval(ctx,0,1.02,.77,.68,shirt);
+    oval(ctx,0,.48,.20,.28,tone);
+    path(ctx,[[-.34,.65],[0,.91],[.34,.65],[.23,.57],[0,.73],[-.23,.57]],'#e1c1a36e');
+    oval(ctx,-.43,.04,.105,.16,tone);
+    oval(ctx,.43,.04,.105,.16,tone);
+    const face=ctx.createLinearGradient(-.42,-.35,.4,.35);
+    face.addColorStop(0,tone);face.addColorStop(1,'#88634d');
+    oval(ctx,0,0,.43,.55,face);
+    oval(ctx,-.035,-.34,.44,.25,hair);
+    path(ctx,[[-.45,-.38],[-.38,.03],[-.27,-.15],[.18,-.33],[.43,-.15],[.36,-.49]],hair);
+    if(i===2) oval(ctx,-.35,-.46,.24,.2,hair);
+    for (const eye of [-.17,.17]) {
+      line(ctx,eye-.07,-.1,eye+.067,-.12,.023,hair);
+      if (active && level>2) line(ctx,eye-.052,-.025,eye+.05,-.04,.028,'#34282a');
+      else {
+        oval(ctx,eye,-.025,.058,.036,'#ead4bd');
+        oval(ctx,eye+.018,-.025,.021,.026,'#35292a');
+      }
+    }
+    if(i===1 || i===4) {
+      ctx.strokeStyle='#493b39';ctx.lineWidth=.025;
+      ctx.strokeRect(-.27,-.08,.2,.125);ctx.strokeRect(.07,-.08,.2,.125);
+      line(ctx,-.07,-.027,.07,-.027,.025,'#493b39');
+    }
+    line(ctx,.02,.015,.055,.13,.02,'#735143');
     if (active) {
-      oval(ctx, cx, cy + size * .18, size * .15, size * .095, '#553832');
-      if (level >= 3) line(ctx, cx + size * .35, cy + size, cx + size * .83, cy - size * .16, size * .27, skin[i]);
-      if (level === 4 && i % 2 === 0) line(ctx, cx - size * .32, cy + size, cx - size * .82, cy - size * .35, size * .23, skin[i]);
-    } else line(ctx, cx - size * .12, cy + size * .16, cx + size * .08, cy + size * .16, 1, '#624338');
+      oval(ctx,.02,.25,.13,level>=3?.085:.048,'#452b2d');
+      line(ctx,-.045,.224,.084,.224,.026,'#ebccb3');
+      if (level >= 3) {
+        ctx.lineCap='round';
+        const handY=-.25+(reduceMotion.matches?0:Math.sin(clock*7+i)*.15);
+        line(ctx,.42,.77,.76,.55,.22,people[i]);
+        line(ctx,.76,.55,.89,handY,.12,tone);
+        oval(ctx,.89,handY,.084,.11,tone);
+        if (level === 4 && i % 2 === 0) {
+          line(ctx,-.43,.77,-.73,.48,.22,people[i]);
+          line(ctx,-.73,.48,-.85,handY-.09,.12,tone);
+          oval(ctx,-.85,handY-.09,.084,.11,tone);
+        }
+      }
+    } else line(ctx,-.09,.25,.09,.25,.024,'#624338');
+    ctx.restore();
   }
   oval(ctx, x + width * .5, y + height * .83, width * .45, height * .12, '#a17d5b');
   for (let i = 0; i < 5; i++) oval(ctx, x + width * (.13 + i * .18), y + height * .8, 4 * unit, 2 * unit, '#e8d8b0');
   path(ctx, [[x,y],[x+width*.24,y],[x+width*.07,y+height],[x,y+height]], '#c7e9d220');
   path(ctx, [[x+width*.61,y],[x+width*.69,y],[x+width*.51,y+height],[x+width*.44,y+height]], '#e4f3e21c');
-  for (const f of [1/3,2/3]) line(ctx, x + width * f, y, x + width * f, y + height, 4 * unit, '#665f4f');
+  for (const f of [.215,.785]) line(ctx, x + width * f, y, x + width * f, y + height, 4 * unit, '#665f4f');
   line(ctx, x, y + height * .12, x + width, y + height * .12, 2 * unit, '#a39b794f');
   ctx.restore();
 }
@@ -173,10 +215,23 @@ function cup() {
     lipY: y + cx * Math.sin(angle) + cy * Math.cos(angle) };
 }
 function drawCup(held) {
+  const u = unit;
+  const gripX = held.x + (16 * Math.cos(held.angle) - 14 * Math.sin(held.angle)) * u;
+  const gripY = held.y + (16 * Math.sin(held.angle) + 14 * Math.cos(held.angle)) * u;
+  const anchorX = Math.max(w * .58, Math.min(w * .83, gripX + 44 * u));
   ctx.save();
-  ctx.lineCap = 'round';
-  line(ctx, held.x + 10 * unit, held.y + 13 * unit, w * .64, h + 17 * unit, 27 * unit, '#283c39');
-  line(ctx, held.x + 10 * unit, held.y + 13 * unit, w * .64, h + 17 * unit, 19 * unit, '#3b5550');
+  ctx.translate(gripX,gripY);
+  ctx.rotate(Math.atan2(h + 24 * u - gripY,anchorX - gripX) - Math.PI / 2);
+  const reach=Math.hypot(anchorX-gripX,h+24*u-gripY)/u;
+  ctx.scale(u,u);
+  const sleeve=ctx.createLinearGradient(-20,0,26,0);
+  sleeve.addColorStop(0,'#253c39');sleeve.addColorStop(.48,'#4b6561');sleeve.addColorStop(1,'#304946');
+  path(ctx,[[-12,10],[12,10],[17,30],[29,reach],[-30,reach],[-19,30]],sleeve);
+  path(ctx,[[-13,8],[13,8],[16,21],[-15,21]],'#314b46');
+  line(ctx,-13,19,15,19,1,'#6d8175');
+  oval(ctx,0,4,11,11,'#b27d5d');
+  ctx.restore();
+  ctx.save();
   ctx.translate(held.x, held.y);
   ctx.rotate(held.angle);
   const body = ctx.createLinearGradient(-23 * unit, 0, 24 * unit, 0);
@@ -187,8 +242,17 @@ function drawCup(held) {
   path(ctx, [[-21,-12],[21,-12],[18,12],[-18,12]].map(([x,y])=>[x*unit,y*unit]), '#987453');
   oval(ctx, 0, -32 * unit, 24 * unit, 7 * unit, '#f6e5c4');
   oval(ctx, 0, -32 * unit, 21 * unit, 5 * unit, coffee > .1 ? '#4c3026' : '#93704f');
-  oval(ctx, 13 * unit, 11 * unit, 13 * unit, 7 * unit, '#bd9070');
-  line(ctx, 8 * unit, 10 * unit, 18 * unit, 8 * unit, 1.5 * unit, '#dfac88');
+  ctx.save();
+  ctx.scale(u,u);
+  const skin=ctx.createLinearGradient(1,0,25,19);
+  skin.addColorStop(0,'#d7a988');skin.addColorStop(1,'#a97557');
+  path(ctx,[[24,18],[27,12],[24,0],[18,-7],[12,-8],[9,-5],[12,1],[15,3],[10,1],[5,1],[2,4],[4,7],[9,9],[5,8],[2,9],[2,12],[7,15],[5,14],[3,17],[6,20],[13,23],[20,22]],skin);
+  ctx.lineCap='round';
+  line(ctx,6,6,14,9,1.1,'#93644d');
+  line(ctx,6,12,14,15,1.1,'#93644d');
+  line(ctx,8,18,14,20,1,'#93644d');
+  oval(ctx,12,-4,2.8,1.45,'#e6bda0');
+  ctx.restore();
   ctx.restore();
 }
 function tone(pitch, duration, volume) {
