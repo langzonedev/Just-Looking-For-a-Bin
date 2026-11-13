@@ -21,7 +21,7 @@ let stream = 0;
 let pouring = false;
 let strand = 0;
 let level = 0;
-let drag, hold, lastFrame, audio;
+let drag, lastFrame, audio;
 let sound = false;
 let finished = false;
 let clock = 0;
@@ -280,7 +280,7 @@ function tone(pitch, duration, volume) {
 }
 function clearInput() {
   keys.clear();
-  drag = hold = null;
+  drag = null;
 }
 function reset() {
   clearInput();
@@ -293,7 +293,6 @@ function reset() {
   el('coffee').value = coffee;
   el('reaction').textContent = reactions[0];
   el('finish').hidden = true;
-  el('pour').hidden = false;
   canvas.focus({preventScroll:true});
 }
 function hit(drop) {
@@ -306,7 +305,7 @@ function hit(drop) {
 function simulate(dt) {
   const movement = Number(keys.has('ArrowRight')) - Number(keys.has('ArrowLeft'));
   cupX = clamp(cupX + movement * dt * .44, .065, rightEdge());
-  const desired = finished ? 0 : (hold != null || keys.has('Space') ? 1 : drag?.tilt ?? 0);
+  const desired = finished ? 0 : (keys.has('Space') ? 1 : drag?.tilt ?? 0);
   tilt += (desired - tilt) * Math.min(1, dt * 11);
   const held = cup();
   const pourThreshold = .39 + (100 - coffee) * .0012;
@@ -357,9 +356,8 @@ function simulate(dt) {
   }
   if (!finished && coffee === 0 && droplets.length === 0) {
     finished = true;
-    const shouldFocus = document.activeElement === canvas || document.activeElement === el('pour');
+    const shouldFocus = document.activeElement === canvas;
     el('finish').hidden = false;
-    el('pour').hidden = true;
     if (shouldFocus) el('again').focus({preventScroll:true});
   }
   return held;
@@ -398,6 +396,7 @@ function frame(time) {
 
 canvas.addEventListener('pointerdown', event => {
   if (!event.isPrimary || event.button !== 0 || finished) return;
+  event.preventDefault();
   canvas.focus({preventScroll:true});
   canvas.setPointerCapture(event.pointerId);
   drag = { id:event.pointerId, x:event.clientX, y:event.clientY, cupX, tilt:0 };
@@ -409,21 +408,14 @@ canvas.addEventListener('pointermove', event => {
 });
 for (const name of ['pointerup','pointercancel','lostpointercapture']) {
   canvas.addEventListener(name,event => { if (drag?.id === event.pointerId) drag = null; });
-  el('pour').addEventListener(name,event => { if (hold === event.pointerId) hold = null; });
 }
-el('pour').addEventListener('pointerdown',event => {
-  if (event.button !== 0 || finished) return;
-  el('pour').setPointerCapture(event.pointerId);
-  hold = event.pointerId;
+canvas.addEventListener('contextmenu', event => event.preventDefault());
+canvas.addEventListener('keydown', event => {
+  if (!['ArrowLeft','ArrowRight','Space'].includes(event.code)) return;
+  event.preventDefault();
+  keys.add(event.code);
 });
-for (const control of [canvas, el('pour')]) {
-  control.addEventListener('keydown',event => {
-    if (!['ArrowLeft','ArrowRight','Space'].includes(event.code)) return;
-    event.preventDefault();
-    keys.add(event.code);
-  });
-  control.addEventListener('blur',clearInput);
-}
+canvas.addEventListener('blur',clearInput);
 window.addEventListener('keyup',event => keys.delete(event.code));
 window.addEventListener('blur',clearInput);
 document.addEventListener('visibilitychange',() => { if (document.hidden) clearInput(); });
