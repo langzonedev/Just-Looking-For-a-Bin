@@ -151,6 +151,7 @@ function crowd() {
     if (active) {
       oval(ctx, cx, cy + size * .18, size * .15, size * .095, '#553832');
       if (level >= 3) line(ctx, cx + size * .35, cy + size, cx + size * .83, cy - size * .16, size * .27, skin[i]);
+      if (level === 4 && i % 2 === 0) line(ctx, cx - size * .32, cy + size, cx - size * .82, cy - size * .35, size * .23, skin[i]);
     } else line(ctx, cx - size * .12, cy + size * .16, cx + size * .08, cy + size * .16, 1, '#624338');
   }
   oval(ctx, x + width * .5, y + height * .83, width * .45, height * .12, '#a17d5b');
@@ -227,7 +228,7 @@ function reset() {
 }
 function hit(drop) {
   if (patches.length > 190) patches.shift();
-  patches.push({ x: drop.x / w, y: drop.y / h, size: 1 + Math.random() * 4 });
+  patches.push({ x: drop.x / w, y: drop.y / h, size: 2 + Math.random() * 5 });
   if (!reduceMotion.matches) {
     for (let i = 0; i < 2; i++) splashes.push({ x:drop.x,y:drop.y,vx:(Math.random()-.5)*75*unit,vy:-35*unit,life:.22 });
   }
@@ -294,12 +295,12 @@ function frame(time) {
     const held = simulate(dt);
     ctx.drawImage(backdrop,0,0,w,h);
     crowd();
-    for (const patch of patches) oval(ctx,patch.x*w,patch.y*h,patch.size*unit,patch.size*.4*unit,'#34291b38');
+    for (const patch of patches) oval(ctx,patch.x*w,patch.y*h,patch.size*unit,patch.size*.4*unit,'#28170fcc');
     for (const drop of droplets) {
       line(ctx,drop.x,drop.y,drop.x-drop.vx*.014,drop.y-drop.vy*.014,drop.size*1.3,'#633e2b');
       oval(ctx,drop.x,drop.y,drop.size*.6,drop.size*.7,'#ad7446');
     }
-    for (const drop of splashes) oval(ctx,drop.x,drop.y,1.2*unit,1.2*unit,'#ac7650');
+    for (const drop of splashes) oval(ctx,drop.x,drop.y,1.8*unit,1.5*unit,'#d69b68');
     drawCup(held);
   }
   requestAnimationFrame(frame);
