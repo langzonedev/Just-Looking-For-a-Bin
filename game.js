@@ -271,6 +271,28 @@ function drawCup(held) {
   ctx.restore();
   ctx.restore();
 }
+function texture(context, output, layers) {
+  const now = context.currentTime;
+  for (const [delay, duration, frequency, resonance, level] of layers) {
+    const source = context.createBufferSource();
+    const frames = Math.ceil(context.sampleRate * duration);
+    source.buffer = context.createBuffer(1, frames, context.sampleRate);
+    const data = source.buffer.getChannelData(0);
+    for (let i = 0; i < frames; i++) {
+      const attack = Math.min(1, i / (context.sampleRate * .0015));
+      data[i] = (Math.random() * 2 - 1) * attack * (1 - i / frames) ** 2;
+    }
+    const filter = context.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = frequency;
+    filter.Q.value = resonance;
+    const gain = context.createGain();
+    gain.gain.value = level;
+    source.connect(filter).connect(gain).connect(output);
+    source.start(now + delay);
+  }
+}
+
 function tone(pitch, duration, volume) {
   if (!sound) return;
   try {
@@ -343,6 +365,11 @@ function simulate(dt) {
       el('reaction').textContent = reactions[level];
     }
     if (clock > nextChatter) {
+      if (sound && audio?.state === 'running') {
+        texture(audio, audio.destination, [
+          [0, .13, 730, .7, .24 * flow], [.045, .14, 1300, .65, .17 * flow],
+        ]);
+      }
       tone(105 + level * 28 + Math.random() * 45, .12 + level * .025, .025 + level * .009);
       nextChatter = clock + .55 - level * .075;
     }
