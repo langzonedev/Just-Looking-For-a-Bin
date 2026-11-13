@@ -123,6 +123,7 @@ function resize() {
   w = rect.width;
   h = rect.height;
   unit = clamp(Math.min(w / 650, h / 400), .64, 1.45);
+  cupX = clamp(cupX, .065, rightEdge());
   density = Math.min(devicePixelRatio || 1, 2);
   canvas.width = backdrop.width = Math.round(w * density);
   canvas.height = backdrop.height = Math.round(h * density);
@@ -159,6 +160,9 @@ function crowd() {
   for (const f of [1/3,2/3]) line(ctx, x + width * f, y, x + width * f, y + height, 4 * unit, '#665f4f');
   line(ctx, x, y + height * .12, x + width, y + height * .12, 2 * unit, '#a39b794f');
   ctx.restore();
+}
+function rightEdge() {
+  return Math.min(.89, 1 - 85 * unit / w);
 }
 function cup() {
   const x = cupX * w, y = h * .612;
@@ -230,11 +234,12 @@ function hit(drop) {
 }
 function simulate(dt) {
   const movement = Number(keys.has('ArrowRight')) - Number(keys.has('ArrowLeft'));
-  cupX = clamp(cupX + movement * dt * .44, .065, .89);
+  cupX = clamp(cupX + movement * dt * .44, .065, rightEdge());
   const desired = finished ? 0 : (hold != null || keys.has('Space') ? 1 : drag?.tilt ?? 0);
   tilt += (desired - tilt) * Math.min(1, dt * 11);
   const held = cup();
-  const flow = coffee > 0 ? clamp((tilt - .39 + (100 - coffee) * -.0012) / .55, 0, 1) : 0;
+  const pourThreshold = .39 + (100 - coffee) * .0012;
+  const flow = coffee > 0 ? clamp((tilt - pourThreshold) / .55, 0, 1) : 0;
   if (flow > 0) {
     coffee = Math.max(0, coffee - 24 * flow * dt);
     el('coffee').value = coffee;
@@ -308,7 +313,7 @@ canvas.addEventListener('pointerdown', event => {
 });
 canvas.addEventListener('pointermove', event => {
   if (drag?.id !== event.pointerId) return;
-  cupX = clamp(drag.cupX + (event.clientX - drag.x) / w, .065, .89);
+  cupX = clamp(drag.cupX + (event.clientX - drag.x) / w, .065, rightEdge());
   drag.tilt = clamp((event.clientY - drag.y) / Math.min(h * .27, 122), 0, 1);
 });
 for (const name of ['pointerup','pointercancel','lostpointercapture']) {
